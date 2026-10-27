@@ -96,6 +96,16 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v7
 
+      - name: Diagnose perl mismatch
+        run: |
+          which -a perl; perl -V:version
+          perl -MCwd -e 'print "Cwd OK $Cwd::VERSION\n"'
+          perl -e 'print "$_\n" for @INC'
+          perl -MCwd -e 'print $INC{"Cwd.pm"}, "\n"'
+          dpkg -S $(perl -MCwd -e 'print $INC{"Cwd.pm"}' 2>/dev/null) 2>&1
+          apt list --installed 2>/dev/null | grep -i '^perl'
+          exit 1  # fail fast: print diagnostics, skip the build
+
       - name: Download Prefetched Stock Configs
         if: inputs.stock_config_artifact != ''
         continue-on-error: true
